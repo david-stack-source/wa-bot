@@ -1,6 +1,6 @@
+import { conf } from "../config/conf.js";
 import * as func from "../helper/func.js";
 import { logger, logIncomingMessage } from "../helper/log.js";
-import { conf } from "../config/conf.js";
 
 /**
  * Handle command & events plugins
@@ -29,6 +29,15 @@ export async function handleMessage(ctx, m, store, plugins) {
         //...set.owner
     ].map(x => x.replace(/[^0-9]/g, "") + "@s.whatsapp.net").includes(m?.sender),
     isBot = m.fromMe || false;
+
+    // Filter Mode Bot (Self / Public)
+    const mode = (conf.mode || 'public').toLowerCase();
+    
+    // Mode Self
+    if (mode === 'self' && !isCreator && !isBot) return;
+
+    // Mode Public
+    if (mode === 'public' && isBot && !isCreator) return;
 
     // Prefix Detection
     let usedPrefix = conf.prefixes.find(p => m.body.startsWith(p));
@@ -69,11 +78,7 @@ export async function handleMessage(ctx, m, store, plugins) {
         const icon = types[type];
         if (!icon) return;
 
-        await ctx.sendText(
-            m.chat,
-            `${func.texted('bold', icon)} ${message}`,
-            m
-        );
+        await ctx.sendText(m.chat, `${func.texted('bold', icon)} ${message}`, m);
     };
 
     for (let plugin of plugins.values()) {
@@ -92,7 +97,8 @@ export async function handleMessage(ctx, m, store, plugins) {
             isBotAdmin,
             store,
             logger,
-            plugins: plugin
+            plugin,
+            plugins
         };
 
         const rules = {

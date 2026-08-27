@@ -1,5 +1,5 @@
-import util from 'node:util';
 import { exec } from 'node:child_process';
+import util from 'node:util';
 
 export default {
     event: async (m, {
@@ -10,6 +10,7 @@ export default {
         command,
         participants,
         store,
+        plugin,
         plugins
     }) => {
         if (m.body.startsWith("->")) {

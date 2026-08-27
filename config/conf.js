@@ -1,8 +1,14 @@
-import 'dotenv/config'
+import 'dotenv/config';
 
 export const conf = {
     // Pairing Code Number
     num: process.env.PAIRING_NUMBER,
+
+    // Connection Method
+    method: process.env.CONNECTION_METHOD,
+
+    // Bot Mode
+    mode: process.env.BOT_MODE,
 
     // Owner Number
     owner: process.env.OWNER_NUMBER ?? '',

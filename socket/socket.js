@@ -11,6 +11,7 @@ import fs from 'fs';
 import NodeCache from "node-cache";
 import path from "path";
 import Pino from 'pino';
+
 import { fileURLToPath } from "url";
 
 import { conf } from "../config/conf.js";
@@ -23,6 +24,7 @@ import ObjectFunction from "../helper/ctx.js";
 import * as func from '../helper/func.js';
 import PluginManager from "../helper/loader.js";
 import makeInMemoryStore from "../helper/store.js";
+
 
 //Load Plugins
 const pluginManager = new PluginManager('plugins');
@@ -112,24 +114,24 @@ export async function connect() {
         auth: {
             creds: state.creds,
             keys: makeCacheableSignalKeyStore(state.keys, Pino({
-                level: "silent",
+                level: conf.log,
             }).child({
-                level: "silent"
+                level: conf.log
             }))
         },
         logger: PinoLogger,
         version,
         browser: Browsers.windows("Chrome"),
+        printQRInTerminal: conf.method === "qr",
         defaultQueryTimeoutMs: undefined,
         syncFullHistory: true,
         markOnlineOnConnect: false,
         emitOwnEvents: false,
         cachedGroupMetadata: async () => undefined,
         getMessage: async (key) => {
-        const jid = jidNormalizedUser(key.remoteJid);
-            if (store) {
+            const jid = jidNormalizedUser(key.remoteJid);
+            if (store)
                 return store.loadMessage(jid, key.id)?.messages || null;
-            };
             return proto.Message.fromObject({});
         }
     });
@@ -156,11 +158,33 @@ export async function connect() {
         if (ev['connection.update']) {
             const {
                 connection,
-                lastDisconnect
+                lastDisconnect,
+                qr
             } = ev['connection.update'];
             const reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
+
+            if (qr) {
+                try {
+                    // qrcode.toString(qr, {
+                    //     type: "terminal",
+                    //     small: true,
+                    //     margin: 0
+                    // }, (e, url) => {
+                    //     if (!e) console.log(url);
+                    // });
+
+                    let url = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr)}`;
+                    logger.divider();
+                    logger.success('Open this link in your browser to scan the QR code:');
+                    logger.title(url);
+                    console.log();
+                } catch (e) {
+                    logger.error(e, 'QRCODE');
+                    process.exit(1);
+                };
+            };
         
-            if (connection === 'connecting' && !ctx.authState.creds.registered && conf.num) {
+            if (connection === 'connecting' && !ctx.authState.creds.registered && conf.method === "pairing") {
                 try {
                     logger.info('Request Pairing Code in 3s');
                     await func.sleep('3s');
@@ -183,7 +207,7 @@ export async function connect() {
                         break;
 
                     case DisconnectReason.connectionClosed:
-                        logger('Connection closed, reconnecting...');
+                        logger.warn('Connection closed, reconnecting...');
                         process.send('reset');
                         break;
 

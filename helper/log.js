@@ -180,13 +180,7 @@ export async function logIncomingMessage(m, ctx) {
         m.key?.participant ||
         '-';
 
-
-    /*
-     * ========================================
-     * MESSAGE TYPE
-     * ========================================
-     */
-
+    // Message Type
     const messageTypes = {
         conversation: '▷ (text)',
         extendedTextMessage: '▷ (text)',
@@ -218,78 +212,53 @@ export async function logIncomingMessage(m, ctx) {
         protocolMessage: '⚙ (protocol)',
     };
 
-
-    /*
-     * ========================================
-     * CHAT TYPE
-     * ========================================
-     */
-
-    const isStatus =
-        jid.endsWith('@broadcast');
-
-    const isChannel =
-        jid.endsWith('@newsletter');
-
-    const isGroup =
-        Boolean(m.isGroup);
+    // Chat Type
+    const isStatus = jid.endsWith('@broadcast');
+    const isChannel = jid.endsWith('@newsletter');
+    const isGroup = Boolean(m.isGroup);
 
     let chatType;
     let groupName = null;
 
-    if (isStatus) {
-        chatType = chalk.yellow('[ STATUS ]');
-    }
+    if (isStatus) 
+        chatType = chalk.bgYellow.black(' STATUS ');
 
-    else if (isChannel) {
-        chatType = chalk.cyan('[ CHANNEL ]');
-    }
+    else if (isChannel) 
+        chatType = chalk.bgCyan.black(' CHANNEL ');
 
     else if (isGroup) {
-        chatType = chalk.magenta('[ GROUP ]');
+        chatType = chalk.bgBlue.white(' GROUP ');
 
         try {
             const metadata =
                 await ctx.groupMetadata(jid);
 
-            groupName =
-                metadata?.subject ||
-                null;
+            groupName = metadata?.subject || null;
 
         } catch {
             groupName = null;
         }
     }
 
-    else {
-        chatType = chalk.blue('[ PRIVATE ]');
-    }
+    else
+        chatType = chalk.bgGreen.black(' PRIVATE ');
 
-
-    /*
-     * ========================================
-     * FORMAT PHONE NUMBER
-     * ========================================
-     */
-
+    // Format Number
     let phone = null;
 
     if (sender && sender !== '-') {
-        if (sender.endsWith('@s.whatsapp.net')) {
+        if (sender.endsWith('@s.whatsapp.net'))
             phone = sender.split('@')[0];
-        }
 
-        else if (/^\d+$/.test(sender)) {
+        else if (/^\d+$/.test(sender))
             phone = sender;
-        }
-    }
+    };
 
     let formattedPhone = null;
 
     if (phone) {
         phone = phone.replace(/\D/g, '');
 
-        // 08xxxxxxxxxx -> 628xxxxxxxxxx
         if (phone.startsWith('08')) {
             phone = `62${phone.slice(1)}`;
         }
@@ -308,20 +277,15 @@ export async function logIncomingMessage(m, ctx) {
 
                 // Kelompokkan sisanya
                 while (remaining.length > 4) {
-                    groups.push(
-                        remaining.slice(0, 4)
-                    );
+                    groups.push(remaining.slice(0, 4));
 
-                    remaining =
-                        remaining.slice(4);
+                    remaining = remaining.slice(4);
                 }
 
-                if (remaining) {
+                if (remaining) 
                     groups.push(remaining);
-                }
 
-                formattedPhone =
-                    `+62 ${groups.join(' ')}`;
+                formattedPhone = `+62 ${groups.join(' ')}`;
             }
 
             else {
@@ -329,157 +293,68 @@ export async function logIncomingMessage(m, ctx) {
             }
         }
 
-        // Fallback negara lain
-        else {
+        // Fallback
+        else
             formattedPhone = `+${phone}`;
-        }
     }
 
-
-    /*
-     * ========================================
-     * FORMAT SENDER
-     * ========================================
-     */
-
+    // Format Sender (Tema simpel & elegan)
     let formattedSender;
 
-    // Channel tidak perlu nomor
-    if (isChannel) {
-        formattedSender =
-            m.pushName ||
-            formattedPhone ||
-            sender ||
-            '-';
-    }
+    if (isChannel)
+        formattedSender = chalk.white(m.pushName || formattedPhone || sender || '-');
 
-    else if (
-        m.pushName &&
-        formattedPhone
-    ) {
-        formattedSender =
-            `${m.pushName} (${formattedPhone})`;
-    }
+    else if (m.pushName && formattedPhone)
+        formattedSender = `${chalk.white.bold(m.pushName)} ${chalk.gray(`(${formattedPhone})`)}`;
 
-    else {
-        formattedSender =
-            m.pushName ||
-            formattedPhone ||
-            sender ||
-            '-';
-    }
+    else 
+        formattedSender = chalk.white(m.pushName || formattedPhone || sender || '-');
 
+    // Get Type Message
+    const messageType = messageTypes[m.mtype] || `◇ (${m.mtype || 'unknown'})`;
 
-    /*
-     * ========================================
-     * GET MESSAGE TYPE
-     * ========================================
-     */
+    // Get Message ID
+    const messageId = m.id || m.key?.id || '-';
 
-    const messageType =
-        messageTypes[m.mtype] ||
-        `◇ (${m.mtype || 'unknown'})`;
+    // Get Message Context
+    const hasText = typeof m.body === 'string' && m.body.trim();
 
-
-    /*
-     * ========================================
-     * MESSAGE ID
-     * ========================================
-     */
-
-    const messageId =
-        m.id ||
-        m.key?.id ||
-        '-';
-
-
-    /*
-     * ========================================
-     * MESSAGE CONTENT
-     * ========================================
-     */
-
-    const hasText =
-        typeof m.body === 'string' &&
-        m.body.trim();
-
-
-    /*
-     * ========================================
-     * LOG
-     * ========================================
-     */
-
+    // Print Log
     console.log();
 
-    console.log(
-        chalk.cyan('📩 MESSAGE'),
-        chalk.gray(timeStamp())
-    );
+    console.log(chalk.bold.cyan('📩 MESSAGE'), chalk.gray(timeStamp()));
 
 
     const field = (label, value) => {
-        console.log(
-            chalk.gray(`${label.padEnd(7)}:`),
-            value
-        );
+        // Label dibuat cyan lembut dan konsisten
+        console.log(chalk.cyan(`${label.padEnd(7)}:`), value);
     };
 
 
-    field(
-        'Chat',
-        `${chatType} ${chalk.gray(jid)}`
-    );
+    field('Chat', `${chatType} ${chalk.white(jid)}`);
 
 
-    if (isGroup && groupName) {
-        field(
-            'Group',
-            chalk.magenta(groupName)
-        );
-    }
+    if (isGroup && groupName)
+        field('Group', chalk.white.bold(groupName));
 
 
-    field(
-        'From',
-        chalk.whiteBright(formattedSender)
-    );
+    field('From', formattedSender);
 
 
-    field(
-        'Type',
-        chalk.cyan(messageType)
-    );
+    field('Type', chalk.cyan(messageType));
 
 
-    field(
-        'ID',
-        chalk.whiteBright(messageId)
-    );
+    field('ID', chalk.gray(messageId));
 
 
-    if (hasText) {
-        field(
-            'Text',
-            chalk.white(m.body)
-        );
-    }
+    if (hasText)
+        field('Text', chalk.whiteBright(m.body));
 
-    else {
-        field(
-            'Message',
-            chalk.gray(
-                'No message content'
-            )
-        );
-    }
+    else
+        field('Message', chalk.gray('No message content'));
 
 
-    console.log(
-        chalk.gray(
-            '─'.repeat(40)
-        )
-    );
+    console.log(chalk.gray('─'.repeat(45)));
 };
 
 import('./func.js').then(({ reloadFile }) => {

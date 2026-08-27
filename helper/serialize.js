@@ -4,11 +4,9 @@ import {
     getContentType,
     isJidGroup,
     isLidUser,
-    isPnUser,
     proto
 } from "baileys";
 
-import { logger } from "./log.js";
 import * as func from "./func.js";
 
  /**
@@ -96,11 +94,17 @@ export const Serialize = async(message, ctx) => {
     const m = message;
 
     if (m.key) {
-        let { id, remoteJid, fromMe, participant } = m.key;
+        const { id, remoteJid, remoteJidAlt, fromMe, participant } = m.key;
 
         m.id = id;
-        m.chat = remoteJid;
         m.fromMe = fromMe;
+        
+        if (remoteJid?.endsWith("@lid") && remoteJidAlt?.endsWith("@s.whatsapp.net"))
+            m.chat = remoteJidAlt;
+        else
+            // Fallback for Group, Newsletter, Broadcast, or common JID
+            m.chat = remoteJid;
+
         m.isGroup = isJidGroup(m.chat);
 
         m.isBot =
@@ -112,13 +116,14 @@ export const Serialize = async(message, ctx) => {
 
     if (m.message) {
         m.mtype = getContentType(m.message);
-        m.msg = extractMsg(m);
+        //m.msg = extractMsg(m);
+        m.msg = (m.mtype == 'viewOnceMessage' ? m.message[m.mtype].message[getContentType(m.message[m.mtype].message)] : m.message[m.mtype]);
         m.body = getBody(m);
         m.args = m.body.trim().split(/ +/).slice(1) || [];
         m.text = m.args.join(' ');
-        m.mentionedJid = m.msg.contextInfo ? m.msg.contextInfo.mentionedJid : [];
+        m.mentionedJid = m.msg?.contextInfo ? m.msg?.contextInfo?.mentionedJid : [];
 
-        let quoted = m.quoted = m.msg.contextInfo ? m.msg.contextInfo.quotedMessage : null;
+        let quoted = m.quoted = m.msg?.contextInfo ? m.msg?.contextInfo?.quotedMessage : null;
 
         if (quoted) {
             let type = getContentType(quoted);
@@ -132,14 +137,14 @@ export const Serialize = async(message, ctx) => {
             };
             m.quoted.message = extractMessageContent(m.msg?.contextInfo?.quotedMessage);
             m.quoted.key = {
-                remoteJid: m.msg?.contextInfo?.remoteJid || m.chat,
+                remoteJid: m.msg?.contextInfo?.remoteJidAlt || m.chat,
                 participant: m.msg?.contextInfo?.remoteJid?.endsWith("@g.us") ? await ctx.decodeJid(m.msg?.contextInfo?.participant) : false,
                 fromMe: areJidsSameUser(await ctx.decodeJid(m.msg?.contextInfo?.participant), await ctx.decodeJid(ctx.user.id)),
                 id: m.msg?.contextInfo?.stanzaId
             };
             m.quoted.mtype = type;
             m.quoted.id = m.msg.contextInfo.stanzaId;
-            m.quoted.chat = m.msg.contextInfo.remoteJid || m.chat;
+            m.quoted.chat = m.msg.contextInfo.remoteJidAlt || m.chat;
             m.quoted.sender = await ctx.decodeJid(m.msg.contextInfo.participant);
             m.quoted.fromMe = m.quoted.sender === await ctx.decodeJid(ctx.user.id);
             m.quoted.isBot =
