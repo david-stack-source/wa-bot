@@ -32,7 +32,7 @@ export async function handleMessage(ctx, m, store, plugins) {
 
     // Filter Mode Bot (Self / Public)
     const mode = (conf.mode || 'public').toLowerCase();
-    
+
     // Mode Self
     if (mode === 'self' && !isCreator && !isBot) return;
 
