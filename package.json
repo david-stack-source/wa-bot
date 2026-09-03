@@ -9,6 +9,14 @@
   ],
   "license": "MIT",
   "author": "David XD",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/davidricardo-dev/wa-bot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/davidricardo-dev/wa-bot/issues"
+  },
+  "homepage": "https://github.com/davidricardo-dev/wa-bot/#readme",
   "engines": {
     "node": ">=20.0.0"
   },
