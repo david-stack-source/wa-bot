@@ -124,7 +124,7 @@ export const Serialize = async(message, ctx) => {
         m.mentionedJid = m.msg?.contextInfo ? m.msg?.contextInfo?.mentionedJid : [];
 
         let quoted = m.quoted = m.msg?.contextInfo ? m.msg?.contextInfo?.quotedMessage : null;
-
+        
         if (quoted) {
             let type = getContentType(quoted);
             m.quoted = m.quoted[type]
