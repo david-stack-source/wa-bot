@@ -22,7 +22,7 @@ export default {
                 m.react("❌");
                 return m.reply(`Send/Reply image/video with caption *${p_c}*`);
             }
-
+            
             if (isVideo) {
                 const duration = (quoted.msg || quoted).seconds || 0;
                 if (duration > 21) {
