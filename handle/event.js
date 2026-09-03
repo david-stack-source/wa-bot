@@ -29,7 +29,7 @@ export async function handleMessage(ctx, m, store, plugins) {
         //...set.owner
     ].map(x => x.replace(/[^0-9]/g, "") + "@s.whatsapp.net").includes(m?.sender),
     isBot = m.fromMe || false;
-    
+
     // Filter Mode Bot (Self / Public)
     const mode = (conf.mode || 'public').toLowerCase();
  
